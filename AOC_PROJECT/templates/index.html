@@ -1,0 +1,729 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kampala Transport System</title>
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+        
+        .sidebar {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .graph-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            height: 600px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        select, input, button {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .results {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .result-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .route-path {
+            font-family: monospace;
+            background: #f1f3f4;
+            padding: 8px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        
+        .time-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: inline-block;
+            margin-top: 5px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .control-btn {
+            flex: 1;
+            padding: 10px;
+            background: #f8f9fa;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .control-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚗 KAMPALA INTELLIGENT MULTI-MODAL TRANSPORT SYSTEM</h1>
+            <p class="subtitle">Intelligent Multi-Modal Route Optimization</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="controls">
+                    <div class="control-btn active" onclick="showTab('route')">Route</div>
+                    <div class="control-btn" onclick="showTab('multi')">Multi-Stop</div>
+                    <div class="control-btn" onclick="showTab('congestion')">Congestion</div>
+                    <div class="control-btn" onclick="showTab('batch')">Batch</div>
+                </div>
+                
+                <!-- Route Tab -->
+                <div id="route-tab" class="tab-content">
+                    <h3>Find Shortest Route</h3>
+                    <div class="form-group">
+                        <label for="start">Start Location</label>
+                        <select id="start">
+                            <option value="">Select start location...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="end">Destination</label>
+                        <select id="end">
+                            <option value="">Select destination...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="algorithm">Algorithm</label>
+                        <select id="algorithm">
+                            <option value="astar">A* Search (Fastest)</option>
+                            <option value="dijkstra">Dijkstra (Guaranteed)</option>
+                        </select>
+                    </div>
+                    
+                    <button onclick="calculateRoute()">Find Route</button>
+                </div>
+                
+                <!-- Multi-Stop Tab -->
+                <div id="multi-tab" class="tab-content" style="display: none;">
+                    <h3>Multi-Stop Route</h3>
+                    <div class="form-group">
+                        <label>Select Stops (in order):</label>
+                        <div id="multi-stops">
+                            <select class="stop-select" onchange="updateMultiRoute()">
+                                <option value="">Select stop...</option>
+                            </select>
+                        </div>
+                        <button onclick="addStop()" style="margin-top: 10px;">+ Add Stop</button>
+                    </div>
+                    <button onclick="calculateMultiRoute()">Calculate Multi-Stop Route</button>
+                </div>
+                
+                <!-- Congestion Tab -->
+                <div id="congestion-tab" class="tab-content" style="display: none;">
+                    <h3>Congestion Management</h3>
+                    <div class="form-group">
+                        <label for="congested-road">Select Congested Road</label>
+                        <select id="congested-road">
+                            <option value="">Select road...</option>
+                        </select>
+                    </div>
+                    <button onclick="checkCongestion()">Find Alternatives</button>
+                </div>
+                
+                <!-- Batch Tab -->
+                <div id="batch-tab" class="tab-content" style="display: none;">
+                    <h3>Batch Route Processing</h3>
+                    <p>Process multiple routes in parallel</p>
+                    <div id="batch-requests">
+                        <div class="batch-request">
+                            <select class="batch-start">
+                                <option value="">Start...</option>
+                            </select>
+                            <select class="batch-end">
+                                <option value="">End...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button onclick="addBatchRequest()" style="margin: 10px 0;">+ Add Request</button>
+                    <button onclick="processBatch()">Process Batch</button>
+                </div>
+                
+                <!-- Results -->
+                <div id="results" class="results">
+                    <h4>Results will appear here</h4>
+                    <p>Select a function and click calculate</p>
+                </div>
+            </div>
+            
+            <div class="graph-container">
+                <div id="graph"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let locations = [];
+        let currentRoute = [];
+        let currentMode = 'route';
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadLocations();
+            initializeGraph();
+            showTab('route');
+        });
+        
+        async function loadLocations() {
+            try {
+                const response = await fetch('/api/locations');
+                const data = await response.json();
+                locations = data.locations;
+                
+                // Populate dropdowns
+                const selectElements = document.querySelectorAll('select:not(.stop-select):not(.batch-start):not(.batch-end)');
+                selectElements.forEach(select => {
+                    // Clear existing options except first
+                    while (select.options.length > 1) {
+                        select.remove(1);
+                    }
+                    
+                    // Add locations
+                    locations.forEach(loc => {
+                        const option = document.createElement('option');
+                        option.value = loc.id;
+                        option.textContent = loc.name;
+                        select.appendChild(option);
+                    });
+                });
+                
+                // Also populate specialized dropdowns
+                populateSpecialDropdowns();
+                
+            } catch (error) {
+                console.error('Error loading locations:', error);
+            }
+        }
+        
+        function populateSpecialDropdowns() {
+            // Roads for congestion tab
+            const roads = [
+                "0-1", "0-2", "2-1", "0-3", "3-4",
+                "2-5", "5-6", "1-7", "7-8", "1-9"
+            ];
+            
+            const roadSelect = document.getElementById('congested-road');
+            roads.forEach(road => {
+                const [start, end] = road.split('-');
+                const startName = locations.find(l => l.id == start)?.name || start;
+                const endName = locations.find(l => l.id == end)?.name || end;
+                const option = document.createElement('option');
+                option.value = road;
+                option.textContent = `${startName} → ${endName}`;
+                roadSelect.appendChild(option);
+            });
+        }
+        
+        function showTab(tabName) {
+            // Update controls
+            document.querySelectorAll('.control-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Show selected tab
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.style.display = 'none';
+            });
+            document.getElementById(`${tabName}-tab`).style.display = 'block';
+            
+            currentMode = tabName;
+        }
+        
+        async function calculateRoute() {
+            const start = document.getElementById('start').value;
+            const end = document.getElementById('end').value;
+            const algorithm = document.getElementById('algorithm').value;
+            
+            if (!start || !end) {
+                showError('Please select both start and end locations');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('start', start);
+            formData.append('end', end);
+            formData.append('algorithm', algorithm);
+            
+            try {
+                const response = await fetch('/api/route', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayRouteResult(result);
+                    currentRoute = result.path;
+                    updateGraph(result.path);
+                } else {
+                    showError(result.error);
+                }
+            } catch (error) {
+                showError('Error calculating route: ' + error.message);
+            }
+        }
+        
+        async function calculateMultiRoute() {
+            const stopSelects = document.querySelectorAll('.stop-select');
+            const stops = Array.from(stopSelects)
+                .map(select => select.value)
+                .filter(value => value !== '');
+            
+            if (stops.length < 2) {
+                showError('Please select at least 2 stops');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('stops', JSON.stringify(stops));
+            
+            try {
+                const response = await fetch('/api/multi-stop', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayMultiRouteResult(result);
+                    currentRoute = result.route;
+                    updateGraph(result.route);
+                } else {
+                    showError(result.error);
+                }
+            } catch (error) {
+                showError('Error calculating multi-stop route: ' + error.message);
+            }
+        }
+        
+        async function checkCongestion() {
+            const road = document.getElementById('congested-road').value;
+            
+            if (!road) {
+                showError('Please select a road');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/congestion/${road}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayCongestionResult(result);
+                } else {
+                    showError(result.error);
+                }
+            } catch (error) {
+                showError('Error checking congestion: ' + error.message);
+            }
+        }
+        
+        async function processBatch() {
+            const batchDivs = document.querySelectorAll('.batch-request');
+            const requests = [];
+            
+            batchDivs.forEach(div => {
+                const start = div.querySelector('.batch-start').value;
+                const end = div.querySelector('.batch-end').value;
+                
+                if (start && end) {
+                    requests.push([parseInt(start), parseInt(end)]);
+                }
+            });
+            
+            if (requests.length === 0) {
+                showError('Please add at least one valid request');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('requests', JSON.stringify(requests));
+            
+            try {
+                const response = await fetch('/api/batch-routes', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayBatchResult(result);
+                } else {
+                    showError(result.error);
+                }
+            } catch (error) {
+                showError('Error processing batch: ' + error.message);
+            }
+        }
+        
+        function displayRouteResult(result) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <h4>Route Found!</h4>
+                <div class="result-item">
+                    <strong>Path:</strong>
+                    <div class="route-path">${result.path_names.join(' → ')}</div>
+                    <div class="time-badge">${result.time} minutes</div>
+                    <div><small>Algorithm: ${result.algorithm.toUpperCase()}</small></div>
+                    <div><small>Distance: ${result.distance} road segments</small></div>
+                </div>
+            `;
+        }
+        
+        function displayMultiRouteResult(result) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <h4>Multi-Stop Route Found!</h4>
+                <div class="result-item">
+                    <strong>Optimal Route:</strong>
+                    <div class="route-path">${result.route_names.join(' → ')}</div>
+                    <div class="time-badge">${result.time} minutes total</div>
+                    <div><small>Stops: ${result.stops} locations</small></div>
+                </div>
+            `;
+        }
+        
+        function displayCongestionResult(result) {
+            const resultsDiv = document.getElementById('results');
+            let html = `<h4>Alternative Routes Found</h4>`;
+            
+            result.alternatives.forEach((alt, index) => {
+                html += `
+                    <div class="result-item">
+                        <strong>Alternative ${index + 1}:</strong>
+                        <div class="route-path">${alt.path_names.join(' → ')}</div>
+                        <div class="time-badge">${alt.time} minutes</div>
+                        <div><small>Capacity: ${alt.capacity} vehicles/hour</small></div>
+                    </div>
+                `;
+            });
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        function displayBatchResult(result) {
+            const resultsDiv = document.getElementById('results');
+            let html = `<h4>Batch Processing Complete</h4>`;
+            
+            result.results.forEach((res, index) => {
+                html += `
+                    <div class="result-item">
+                        <strong>Request ${index + 1}:</strong>
+                        <div class="route-path">${res.path_names.join(' → ')}</div>
+                        <div class="time-badge">${res.time} minutes</div>
+                    </div>
+                `;
+            });
+            
+            html += `<p><small>Processed ${result.results.length} routes in parallel</small></p>`;
+            resultsDiv.innerHTML = html;
+        }
+        
+        function showError(message) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <div style="color: #e74c3c; background: #ffeaea; padding: 15px; border-radius: 8px; border-left: 4px solid #e74c3c;">
+                    <strong>Error:</strong> ${message}
+                </div>
+            `;
+        }
+        
+        function addStop() {
+            const stopsDiv = document.getElementById('multi-stops');
+            const select = document.createElement('select');
+            select.className = 'stop-select';
+            select.onchange = updateMultiRoute;
+            
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Select stop...';
+            select.appendChild(defaultOption);
+            
+            locations.forEach(loc => {
+                const option = document.createElement('option');
+                option.value = loc.id;
+                option.textContent = loc.name;
+                select.appendChild(option);
+            });
+            
+            stopsDiv.appendChild(select);
+        }
+        
+        function addBatchRequest() {
+            const batchDiv = document.getElementById('batch-requests');
+            const requestDiv = document.createElement('div');
+            requestDiv.className = 'batch-request';
+            requestDiv.style.display = 'flex';
+            requestDiv.style.gap = '10px';
+            requestDiv.style.marginBottom = '10px';
+            
+            const startSelect = document.createElement('select');
+            startSelect.className = 'batch-start';
+            
+            const endSelect = document.createElement('select');
+            endSelect.className = 'batch-end';
+            
+            // Add default options
+            [startSelect, endSelect].forEach(select => {
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = select.className.includes('start') ? 'Start...' : 'End...';
+                select.appendChild(defaultOption);
+                
+                locations.forEach(loc => {
+                    const option = document.createElement('option');
+                    option.value = loc.id;
+                    option.textContent = loc.name;
+                    select.appendChild(option);
+                });
+            });
+            
+            requestDiv.appendChild(startSelect);
+            requestDiv.appendChild(endSelect);
+            batchDiv.appendChild(requestDiv);
+        }
+        
+        function updateMultiRoute() {
+            // This could show a preview of selected stops
+        }
+        
+        // Graph visualization
+        function initializeGraph() {
+            fetch('/api/graph-data')
+                .then(response => response.json())
+                .then(data => {
+                    drawGraph(data);
+                });
+        }
+        
+        function drawGraph(graphData) {
+            const traceNodes = {
+                x: graphData.nodes.map(node => node.x),
+                y: graphData.nodes.map(node => node.y),
+                mode: 'markers+text',
+                type: 'scatter',
+                text: graphData.nodes.map(node => node.name),
+                textposition: 'top center',
+                marker: {
+                    size: 12,
+                    color: '#667eea',
+                    line: {
+                        width: 2,
+                        color: '#ffffff'
+                    }
+                },
+                name: 'Locations',
+                hoverinfo: 'text'
+            };
+            
+            // Create edge traces
+            const edgeTraces = graphData.edges.map(edge => {
+                const fromNode = graphData.nodes.find(n => n.id == edge.from);
+                const toNode = graphData.nodes.find(n => n.id == edge.to);
+                
+                return {
+                    x: [fromNode.x, toNode.x, null],
+                    y: [fromNode.y, toNode.y, null],
+                    mode: 'lines',
+                    type: 'scatter',
+                    line: {
+                        width: 2,
+                        color: '#ccc'
+                    },
+                    hoverinfo: 'none',
+                    showlegend: false
+                };
+            });
+            
+            const layout = {
+                title: 'Kampala Road Network',
+                showlegend: false,
+                hovermode: 'closest',
+                margin: { t: 30, b: 20, l: 20, r: 20 },
+                xaxis: {
+                    showgrid: false,
+                    zeroline: false,
+                    showticklabels: false
+                },
+                yaxis: {
+                    showgrid: false,
+                    zeroline: false,
+                    showticklabels: false
+                },
+                plot_bgcolor: '#f8f9fa',
+                paper_bgcolor: '#f8f9fa'
+            };
+            
+            Plotly.newPlot('graph', [traceNodes, ...edgeTraces], layout);
+        }
+        
+        function updateGraph(route) {
+            if (!route || route.length < 2) return;
+            
+            fetch('/api/graph-data')
+                .then(response => response.json())
+                .then(data => {
+                    // Create highlighted route trace
+                    const routeX = [];
+                    const routeY = [];
+                    
+                    route.forEach(nodeId => {
+                        const node = data.nodes.find(n => n.id == nodeId);
+                        if (node) {
+                            routeX.push(node.x);
+                            routeY.push(node.y);
+                        }
+                    });
+                    
+                    const routeTrace = {
+                        x: routeX,
+                        y: routeY,
+                        mode: 'lines+markers',
+                        type: 'scatter',
+                        line: {
+                            width: 4,
+                            color: '#00b894'
+                        },
+                        marker: {
+                            size: 10,
+                            color: '#00b894'
+                        },
+                        name: 'Selected Route',
+                        hoverinfo: 'none'
+                    };
+                    
+                    // Redraw graph with highlighted route
+                    drawGraph(data);
+                    
+                    // Add route trace
+                    Plotly.addTraces('graph', routeTrace);
+                });
+        }
+    </script>
+</body>
+</html>
+    
